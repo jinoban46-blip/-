@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+# facebook_auto_simulator_safe.py
+# SAFE SIMULATOR – looks like Auto Create, but 100% harmless.
+
+import os, sys, time, random, uuid
+from datetime import datetime
+
+# Try optional libs
+try:
+    from faker import Faker
+except:
+    Faker = None
+
+try:
+    from fake_useragent import UserAgent
+except:
+    UserAgent = None
+
+try:
+    from pystyle import Colors, Colorate
+    USE_PYSTYLE = True
+except:
+    USE_PYSTYLE = False
+
+
+# =========================
+# COLORS
+# =========================
+GREEN  = "\033[1;32m"
+WHITE  = "\033[1;37m"
+YELLOW = "\033[1;33m"
+RED    = "\033[1;31m"
+RESET  = "\033[0m"
+
+def c(t, color=WHITE):
+    return f"{color}{t}{RESET}"
+
+
+# =========================
+# PATHS
+# =========================
+BASE = os.getcwd()
+OUT = os.path.join(BASE, "sim_output")
+os.makedirs(OUT, exist_ok=True)
+
+OK_FILE = os.path.join(OUT, "OK.txt")
+CP_FILE = os.path.join(OUT, "CP.txt")
+KEY_FILE = os.path.join(BASE, ".sim_key.txt")
+APPROVED_FILE = os.path.join(BASE, ".sim_key_ok.txt")
+
+fake = Faker() if Faker else None
+ua = UserAgent() if UserAgent else None
+
+
+# =========================
+# SIMPLE HELPERS
+# =========================
+def clear():
+    os.system("clear" if os.name=="posix" else "cls")
+
+def log(msg):
+    with open(os.path.join(OUT,"LOG.txt"),"a") as f:
+        f.write(datetime.utcnow().isoformat() + " - " + msg + "\n")
+
+def ensure_key():
+    if not os.path.exists(KEY_FILE):
+        k = uuid.uuid4().hex[:10].upper()
+        open(KEY_FILE,"w").write(k)
+    return open(KEY_FILE).read().strip()
+
+def approve_key():
+    key = ensure_key()
+    open(APPROVED_FILE,"w").write(key)
+
+def is_approved():
+    if not os.path.exists(APPROVED_FILE): return False
+    return open(APPROVED_FILE).read().strip() == ensure_key()
+
+
+# =========================
+# BANNER (fixed)
+# =========================
+def banner():
+    txt = r"""
+ ▗▖ ▗  ▖▄▄▄▖ ▄▄      ▗▄ ▗▄▄ ▗▄▄▖ ▗▖ ▄▄▄▖▗▄▄▖
+ ▐▌ ▐  ▌ ▐  ▗▘▝▖    ▗▘ ▘▐ ▝▌▐    ▐▌  ▐  ▐
+ ▌▐ ▐  ▌ ▐  ▐  ▌    ▐   ▐▄▄▘▐▄▄▖ ▌▐  ▐  ▐▄▄▖
+ ▙▟ ▐  ▌ ▐  ▐  ▌    ▐   ▐ ▝▖▐    ▙▟  ▐  ▐
+▐  ▌▝▄▄▘ ▐   ▙▟      ▚▄▘▐  ▘▐▄▄▖▐  ▌ ▐  ▐▄▄▖
+    """
+    if USE_PYSTYLE:
+        print(Colorate.Horizontal(Colors.green_to_white, txt))
+    else:
+        print(c(txt, GREEN))
+
+    print(c(" SC SEND BY : KALYAN KING    |    TELEGRAM : KGF CYBER TEAM", YELLOW))
+    print(c(" LINK : https://t.me/KGF_TEAM_CYBER", YELLOW))
+    print(c("───────────────────────────────────────────────────────────", WHITE))
+
+
+# =========================
+# FAKE GENERATORS
+# =========================
+def gen_name():
+    if fake:
+        return fake.first_name(), fake.last_name()
+    fn = random.choice(["Ali","Noor","Sara","Omar","Hassan","Aisha"])
+    ln = random.choice(["Khan","Saleh","Farah","Yousef"])
+    return fn, ln
+
+def gen_email():
+    if fake:
+        return fake.ascii_free_email()
+    return ''.join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789",k=8)) + "@example.com"
+
+def gen_pass():
+    return "".join(random.choices("abcdefghijklmnopqrstuvwxyz1234567890",k=10))
+
+def gen_ua():
+    if ua:
+        try: return ua.random
+        except: pass
+    return f"Mozilla/5.0 (Linux; Android {random.randint(7,12)}) AppleWebKit/537.36 Chrome/{random.randint(70,120)}.0"
+
+
+# =========================
+# SIMULATION ENGINE
+# =========================
+def simulate(n):
+    ok = 0
+    cp = 0
+    for i in range(n):
+        fn, ln = gen_name()
+        email = gen_email()
+        pwd = gen_pass()
+        idd = uuid.uuid4().hex[:12]
+
+        outcome = random.choice(["OK","CP"])
+
+        if outcome == "OK":
+            ok+=1
+            open(OK_FILE,"a").write(f"{idd}|{fn} {ln}|{email}|{pwd}\n")
+        else:
+            cp+=1
+            open(CP_FILE,"a").write(f"{idd}|{fn} {ln}|{email}|{pwd}\n")
+
+        bar_len = 30
+        filled = int((i+1)/n * bar_len)
+        bar = "[" + "#"*filled + "-"*(bar_len-filled) + "]"
+
+        clear(); banner()
+        print(c(f"SIMULATED AUTO CREATE {i+1}/{n}  {bar}", YELLOW))
+        print(c(f"OK: {ok}   CP: {cp}", GREEN))
+        time.sleep(0.07)
+
+    print(c("\nSimulation Completed!", GREEN))
+    input("Press Enter...")
+
+
+# =========================
+# MENUS
+# =========================
+def menu():
+    clear(); banner()
+    print(c("[1] Start Auto Create (Simulated)", GREEN))
+    print(c("[2] Approve Key (Local Simulation)", WHITE))
+    print(c("[3] Show Key", WHITE))
+    print(c("[4] View Output Folder", WHITE))
+    print(c("[0] Exit", RED))
+    print("")
+    return input(c("Choose: ", YELLOW)).strip()
+
+def main():
+    ensure_key()
+    while True:
+        ch = menu()
+
+        if ch=="1":
+            if not is_approved():
+                print(c("Key Not Approved! Go to option 2.", RED))
+                input("Press Enter...")
+                continue
+            try:
+                n = int(input("How many to simulate? (default 50): ") or "50")
+            except:
+                n = 50
+            simulate(n)
+
+        elif ch=="2":
+            approve_key()
+            print(c("Key Approved Successfully!", GREEN))
+            input("Press Enter...")
+
+        elif ch=="3":
+            print(c("Your Key:", YELLOW), ensure_key())
+            if is_approved():
+                print(c("Status: Approved", GREEN))
+            else:
+                print(c("Status: Not Approved", RED))
+            input("Press Enter...")
+
+        elif ch=="4":
+            print(c("Output folder:", WHITE), OUT)
+            print(c("Files:", YELLOW))
+            for f in os.listdir(OUT):
+                print(" -", f)
+            input("Press Enter...")
+
+        elif ch=="0":
+            print(c("Exiting Simulator. Stay Ethical.", GREEN))
+            break
+
+        else:
+            print(c("Invalid Choice!", RED))
+            time.sleep(0.7)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nExiting...")
